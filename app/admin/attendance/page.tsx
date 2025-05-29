@@ -121,14 +121,13 @@ export default function AttendanceViewer() {
 
   const fetchAttendanceData = async () => {
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BACKEND_API
-      }/attendance?standard=${currentStandard}&class=${currentClass}&month=${Number.parseInt(
+      `https://t1-api-attendance.vercel.app/api/attendance?standard=${currentStandard}&class=${currentClass}&month=${Number.parseInt(
         selectedMonth
       )}&year=${Number.parseInt(selectedYear)}${
         showAbsentOnly ? "&status=A" : ""
       }`
     );
+
     if (!response.ok) {
       throw new Error("Failed to fetch attendance data");
     }
@@ -139,7 +138,7 @@ export default function AttendanceViewer() {
 
   const fetchHolidays = async () => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/holiday?year=${Number.parseInt(
+      `https://t1-api-attendance.vercel.app/api/holiday?year=${Number.parseInt(
         selectedYear
       )}`
     );
@@ -303,7 +302,6 @@ export default function AttendanceViewer() {
   };
 
   const handleOpenEditDialog = (record: AttendanceRecord) => {
-   
     setSelectedRecord(record);
     form.reset({
       status: record.status as "P" | "A",
@@ -320,8 +318,6 @@ export default function AttendanceViewer() {
       id: selectedRecord.id,
       status: values.status,
     };
-
-    
 
     try {
       const response = await fetch(

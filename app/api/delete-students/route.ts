@@ -6,20 +6,25 @@ export async function POST(request: Request) {
   const { studentIds } = data;
 
   try {
-    // Delete academic history for all selected students
-    await prisma.academicHistory.deleteMany({
-      where: { studentId: { in: studentIds } },
-    });
-
-    const mark = await prisma.mark.deleteMany({
+    // First delete all marks for the selected students
+    await prisma.mark.deleteMany({
       where: {
-        studentId: parseInt(studentIds),
+        studentId: { in: studentIds.map((id) => parseInt(id)) },
       },
     });
 
-    // Delete the students
+    // Then delete academic history for all selected students
+    await prisma.academicHistory.deleteMany({
+      where: {
+        studentId: { in: studentIds.map((id) => parseInt(id)) },
+      },
+    });
+
+    // Finally delete the students
     await prisma.student.deleteMany({
-      where: { id: { in: studentIds } },
+      where: {
+        id: { in: studentIds.map((id) => parseInt(id)) },
+      },
     });
 
     return NextResponse.json({ message: "Students deleted successfully" });

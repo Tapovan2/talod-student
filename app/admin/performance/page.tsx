@@ -103,7 +103,7 @@ export default function PerformanceReportPage() {
           }),
         }),
         fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/pattendance?standard=${selectedStandard}&class=${selectedClass}&month=${selectedMonth}&year=${selectedYear}`
+          `https://t1-api-attendance.vercel.app/api/pattendance?standard=${selectedStandard}&class=${selectedClass}&month=${selectedMonth}&year=${selectedYear}`
         ),
       ]);
 
