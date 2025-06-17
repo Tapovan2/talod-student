@@ -6,6 +6,10 @@ export async function GET(request: Request) {
   const standard = searchParams.get("standard");
   const classParam = searchParams.get("class");
   const subject = searchParams.get("subject");
+  // console.log("standard",standard);
+  // console.log("classParam",classParam);
+  // console.log("subject",subject);
+  
 
   let students;
 
@@ -32,6 +36,9 @@ export async function GET(request: Request) {
       },
     });
   }
+
+  // console.log("students",students);
+  
 
   //@ts-expect-error
   const sortedStudents = students.sort((a, b) => a.rollNo - b.rollNo);
