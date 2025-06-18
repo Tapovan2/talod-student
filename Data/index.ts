@@ -1,9 +1,15 @@
 export const standards = {
   "KG1":{
-    classes:["Dhruv"]
+    classes:["Dhruv"],
+    subjects:[
+      "demo1"
+    ]
   },
   "KG2":{
-    classes:["Dhruv"]
+    classes:["Dhruv"],
+    subjects:[
+      "demo1"
+    ]
   },
   "1": {
     classes: ["Dhruv", "Nachiketa","Prahlad","Nambi"],
