@@ -33,16 +33,28 @@ export default function EnhancedAdminPanel() {
   const [deletingId, setDeletingId] = useState(null)
   const [loadingId, setLoadingId] = useState(null)
 
-  const STANDARDS = Object.keys(standards)
+  const STANDARDS = Object.keys(standards).sort((a, b) => {
+    // Custom sort to put KG1, KG2 first, then numeric order
+    if (a.startsWith("KG") && !b.startsWith("KG")) return -1
+    if (!a.startsWith("KG") && b.startsWith("KG")) return 1
+    if (a.startsWith("KG") && b.startsWith("KG")) {
+      return a.localeCompare(b)
+    }
+    return Number.parseInt(a) - Number.parseInt(b)
+  })
 
   // Fetch students for a specific standard and class
   const fetchStudentsForClass = async (standard, className) => {
     const key = `${standard}-${className}`
     setLoadingStandards((prev) => ({ ...prev, [key]: true }))
+    console.log("key",key);
+    
 
     try {
-      const response = await fetch(`/api/students?standard=${standard}&class=${className}`)
+      const response = await fetch(`/api/students?currentStandard=${standard}&class=${className}`)
       const data = await response.json()
+      console.log("data",data);
+      
 
       setAllStudents((prev) => ({
         ...prev,
@@ -178,7 +190,7 @@ export default function EnhancedAdminPanel() {
           studentsByClass[student.class].push({
             rollNo: student.rollNo,
             name: student.name,
-            standard: selectedStandardForUpload,
+            currentStandard: selectedStandardForUpload, // Changed from 'standard' to 'currentStandard'
             class: student.class,
           })
         } else {
@@ -186,7 +198,7 @@ export default function EnhancedAdminPanel() {
           studentsWithoutClass.push({
             rollNo: student.rollNo,
             name: student.name,
-            standard: selectedStandardForUpload,
+            currentStandard: selectedStandardForUpload, // Changed from 'standard' to 'currentStandard'
             class: selectedClassForUpload,
           })
         }
@@ -314,13 +326,20 @@ export default function EnhancedAdminPanel() {
     const formData = new FormData(e.target)
     const data = Object.fromEntries(formData.entries())
 
+    // Change 'standard' to 'currentStandard'
+    const studentData = {
+      ...data,
+      currentStandard: data.standard,
+    }
+    delete studentData.standard
+
     setIsAddingStudent(true)
 
     try {
       const response = await fetch(`/api/students`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(studentData),
       })
 
       if (response.ok) {
@@ -343,13 +362,20 @@ export default function EnhancedAdminPanel() {
     const formData = new FormData(e.target)
     const data = Object.fromEntries(formData.entries())
 
+    // Change 'standard' to 'currentStandard'
+    const studentData = {
+      ...data,
+      currentStandard: data.standard,
+    }
+    delete studentData.standard
+
     setLoadingId(editingStudent.id)
 
     try {
       const response = await fetch(`/api/students/${editingStudent.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(studentData),
       })
 
       if (response.ok) {
@@ -453,31 +479,31 @@ export default function EnhancedAdminPanel() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Admin Panel</h1>
           <Link href="/admin">
-            <Button  className="flex items-center gap-2">
+            <Button className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Students
             </Button>
           </Link>
           <Link href="/admin/excel">
-            <Button  className="flex items-center gap-2">
+            <Button className="flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4" />
               Excel Management
             </Button>
           </Link>
           <Link href="/admin/performance">
-            <Button  className="flex items-center gap-2">
+            <Button className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Performance
             </Button>
           </Link>
           <Link href="/admin/attendance">
-            <Button  className="flex items-center gap-2">
+            <Button className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Attendance
             </Button>
           </Link>
           <Link href="/admin/attendance/holiday">
-            <Button  className="flex items-center gap-2">
+            <Button className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" />
               Holiday Management
             </Button>
@@ -587,29 +613,42 @@ export default function EnhancedAdminPanel() {
             )}
           </div>
         </div>
-
-       
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          {STANDARDS.slice(0, 6).map((standard) => (
-            <TabsTrigger key={standard} value={standard}>
-              Std {standard}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {STANDARDS.slice(6).length > 0 && (
-          <TabsList className="grid w-full grid-cols-6 mt-2">
-            {STANDARDS.slice(6).map((standard) => (
-              <TabsTrigger key={standard} value={standard}>
+        <div className="space-y-2">
+          <TabsList className="grid grid-cols-6 h-auto p-1 bg-muted rounded-md">
+            {STANDARDS.slice(0, 6).map((standard) => (
+              <TabsTrigger
+                key={standard}
+                value={standard}
+                className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
                 Std {standard}
               </TabsTrigger>
             ))}
           </TabsList>
-        )}
 
+          {STANDARDS.slice(6).length > 0 && (
+            <TabsList className="grid grid-cols-6 h-auto p-1 bg-muted rounded-md">
+              {STANDARDS.slice(6).map((standard) => (
+                <TabsTrigger
+                  key={standard}
+                  value={standard}
+                  className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  Std {standard}
+                </TabsTrigger>
+              ))}
+              {/* Fill empty slots if needed */}
+              {Array.from({ length: 6 - STANDARDS.slice(6).length }).map((_, index) => (
+                <div key={`empty-${index}`} className="invisible"></div>
+              ))}
+            </TabsList>
+          )}
+        </div>
+
+        {/* Rest of the TabsContent remains the same */}
         {STANDARDS.map((standard) => (
           <TabsContent key={standard} value={standard} className="mt-6">
             <div className="space-y-6">
@@ -633,8 +672,8 @@ export default function EnhancedAdminPanel() {
                         <Input id="rollNo" name="rollNo" required />
                       </div>
                       <div>
-                        <Label htmlFor="standard">Standard</Label>
-                        <Input id="standard" name="standard" value={standard} readOnly />
+                        <Label htmlFor="currentStandard">Standard</Label>
+                        <Input id="currentStandard" name="currentStandard" value={standard} readOnly />
                       </div>
                       <div>
                         <Label htmlFor="class">Class</Label>
@@ -764,8 +803,13 @@ export default function EnhancedAdminPanel() {
                                               />
                                             </div>
                                             <div>
-                                              <Label htmlFor="standard">Standard</Label>
-                                              <Input id="standard" name="standard" defaultValue={standard} readOnly />
+                                              <Label htmlFor="currentStandard">Standard</Label>
+                                              <Input
+                                                id="currentStandard"
+                                                name="currentStandard"
+                                                defaultValue={standard}
+                                                readOnly
+                                              />
                                             </div>
                                             <div>
                                               <Label htmlFor="class">Class</Label>

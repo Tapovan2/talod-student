@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const standard = searchParams.get("standard");
+  const standard = searchParams.get("currentStandard");
   const classParam = searchParams.get("class");
   const subject = searchParams.get("subject");
   // console.log("standard",standard);
