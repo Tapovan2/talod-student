@@ -1,6 +1,12 @@
 export const standards = {
+  "KG1":{
+    classes:["Dhruv"]
+  },
+  "KG2":{
+    classes:["Dhruv"]
+  },
   "1": {
-    classes: ["Dhruv", "Nachiketa","Nambi"],
+    classes: ["Dhruv", "Nachiketa","Prahlad","Nambi"],
     subjects: [
       "Gujarati",
       "Mathematics",
@@ -12,7 +18,7 @@ export const standards = {
     ],
   },
   "2": {
-    classes: ["Dhruv", "Nachiketa","Nambi"],
+    classes: ["Dhruv", "Nachiketa","Prahlad","Nambi"],
     subjects: [
       "Gujarati",
       "Mathematics",
