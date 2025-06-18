@@ -34,5 +34,7 @@ export async function POST(request: Request) {
       { error: "Error deleting students" },
       { status: 500 }
     );
+  }finally{
+    await prisma.$disconnect()
   }
 }

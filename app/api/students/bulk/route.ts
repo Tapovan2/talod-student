@@ -99,5 +99,7 @@ export async function POST(request: Request) {
       { success: false, error: "Internal server error during bulk upload." },
       { status: 500 }
     )
+  }finally{
+    await prisma.$disconnect()
   }
 }
