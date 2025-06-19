@@ -12,7 +12,7 @@ export const standards = {
     ]
   },
   "1": {
-    classes: ["Dhruv", "Nachiketa","Prahlad","Nambi"],
+    classes: ["Nachiketa", "Dhruv","Prahlad","Nambi"],
     subjects: [
       "Gujarati",
       "Mathematics",
@@ -24,7 +24,7 @@ export const standards = {
     ],
   },
   "2": {
-    classes: ["Dhruv", "Nachiketa","Prahlad","Nambi"],
+    classes: [ "Nachiketa","Dhruv","Prahlad","Nambi"],
     subjects: [
       "Gujarati",
       "Mathematics",
@@ -35,7 +35,7 @@ export const standards = {
     ],
   },
   "3": {
-    classes: ["Dhruv", "Nachiketa", "Prahlad","Nambi"],
+    classes: [ "Nachiketa","Dhruv", "Prahlad","Nambi"],
     subjects: [
       "Gujarati",
       "Mathematics",
@@ -47,7 +47,7 @@ export const standards = {
     ],
   },
   "4": {
-    classes: ["Dhruv", "Nachiketa", "Prahlad","Nambi"],
+    classes: [ "Nachiketa","Dhruv", "Prahlad","Nambi"],
     subjects: [
       "Gujarati",
       "Mathematics",
@@ -59,7 +59,7 @@ export const standards = {
     ],
   },
   "5": {
-    classes: ["Dhruv", "Nachiketa", "Prahlad","Nambi"],
+    classes: [ "Nachiketa","Dhruv", "Prahlad","Nambi"],
 
     subjects: [
       "Gujarati",
@@ -72,7 +72,7 @@ export const standards = {
     ],
   },
   "6": {
-    classes: ["Dhruv", "Nachiketa", "Prahlad","Nambi"],
+    classes: [ "Nachiketa","Dhruv", "Prahlad","Nambi"],
     subjects: [
       "Mathematics",
       "Science",
@@ -87,7 +87,7 @@ export const standards = {
     ],
   },
   "7": {
-    classes: ["Dhruv", "Nachiketa", "Prahlad","Nambi"],
+    classes: [ "Nachiketa","Dhruv", "Prahlad","Nambi"],
     subjects: [
       "Mathematics",
       "Science",
@@ -102,7 +102,7 @@ export const standards = {
     ],
   },
   "8": {
-    classes: ["Dhruv", "Nachiketa", "Prahlad","Nambi","Foundation"],
+    classes: [ "Nachiketa","Dhruv", "Prahlad","Nambi","Foundation"],
     subjects: [
       "Mathematics",
       "Science",
@@ -117,7 +117,7 @@ export const standards = {
     ],
   },
   "9": {
-    classes: ["Dhruv", "Nachiketa", "Prahlad", "Foundation"],
+    classes: [ "Nachiketa","Dhruv", "Prahlad", "Foundation"],
     subjects: [
       "Hindi",
       "Sanskrit",
@@ -129,7 +129,7 @@ export const standards = {
     ],
   },
   "10": {
-    classes: ["Dhruv", "Nchiketa","Prahlad"],
+    classes: [ "Nchiketa","Dhruv","Prahlad"],
     subjects: [
       "Sanskrit",
       "Maths",
