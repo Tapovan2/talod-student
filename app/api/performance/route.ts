@@ -29,6 +29,8 @@ interface Subjects {
 
 export async function POST(request: Request) {
   const { standard, classParam, month, year } = await request.json();
+  console.log(standard,classParam,month,year);
+  
 
   if (!standard || !classParam) {
     return NextResponse.json(
@@ -95,12 +97,16 @@ export async function POST(request: Request) {
       orderBy: { rollNo: "asc" },
     });
 
+  
+   
+   
+
     if (!studentsWithMarks.length) {
       return NextResponse.json({ message: "No Data Found" }, { status: 404 });
     }
     const reportData = studentsWithMarks.map((student) => {
       const subjects: Subjects = {};
-      const studentId = student.marks[0].studentId;
+      const studentId = student.marks[0]?.studentId;
 
       student.marks.forEach((mark) => {
         const subject = mark.markEntry.subject;

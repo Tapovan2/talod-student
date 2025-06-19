@@ -51,9 +51,9 @@ export default function EnhancedAdminPanel() {
     
 
     try {
-      const response = await fetch(`/api/students?currentStandard=${standard}&class=${className}`)
+      const response = await fetch(`/api/students?standard=${standard}&class=${className}`)
       const data = await response.json()
-      console.log("data",data);
+     
       
 
       setAllStudents((prev) => ({

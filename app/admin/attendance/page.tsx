@@ -120,6 +120,8 @@ export default function AttendanceViewer() {
   }, [currentStandard]);
 
   const fetchAttendanceData = async () => {
+   
+    
     const response = await fetch(
       `https://t1-api-attendance.vercel.app/api/attendance?standard=${currentStandard}&class=${currentClass}&month=${Number.parseInt(
         selectedMonth

@@ -57,7 +57,7 @@ export default function PerformanceReportPage() {
 
     setLoading(true)
     try {
-      const [performanceResponse, attendanceResponse] = await Promise.all([
+      const [performanceResponse, attendanceResponse] = await Promise.allSettled([
         fetch("/api/performance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -73,12 +73,33 @@ export default function PerformanceReportPage() {
         ),
       ])
 
-      if (!performanceResponse.ok || !attendanceResponse.ok) {
-        throw new Error("Failed to generate report")
+      // Handle performance data
+      let performanceData = { students: [] }
+      if (performanceResponse.status === "fulfilled" && performanceResponse.value.ok) {
+        try {
+          performanceData = await performanceResponse.value.json()
+          if (!performanceData.students) {
+            performanceData.students = []
+          }
+        } catch (error) {
+          console.warn("Failed to parse performance data:", error)
+          performanceData = { students: [] }
+        }
       }
 
-      const performanceData = await performanceResponse.json()
-      const attendanceData = await attendanceResponse.json()
+      // Handle attendance data
+      let attendanceData = []
+      if (attendanceResponse.status === "fulfilled" && attendanceResponse.value.ok) {
+        try {
+          attendanceData = await attendanceResponse.value.json()
+          if (!Array.isArray(attendanceData)) {
+            attendanceData = []
+          }
+        } catch (error) {
+          console.warn("Failed to parse attendance data:", error)
+          attendanceData = []
+        }
+      }
 
       // Process attendance data
       const processedAttendanceData = attendanceData.reduce((acc: any, curr: any) => {
@@ -103,30 +124,64 @@ export default function PerformanceReportPage() {
         return acc
       }, {})
 
-      // Merge performance and attendance data
+      // Create a basic student list if no performance data but we have class info
+      let studentsList = performanceData.students || []
+
+      // If no students from performance API, create basic student entries
+      if (studentsList.length === 0) {
+        // You can modify this logic based on how you want to handle missing student data
+        // For now, we'll create a basic structure if attendance data exists
+        const attendanceStudentIds = Object.keys(processedAttendanceData)
+        if (attendanceStudentIds.length > 0) {
+          studentsList = attendanceStudentIds.map((studentId, index) => ({
+            name: `Student ${index + 1}`, // You might want to get actual names from somewhere else
+            rollNo: studentId,
+            studentId: studentId,
+            subjects: {},
+          }))
+        }
+      }
+
+      // Validation flags
+      const hasValidAttendanceData = Object.keys(processedAttendanceData).length > 0
+      const hasValidMarksData =
+        studentsList.length > 0 &&
+        studentsList.some((student) => student.subjects && Object.keys(student.subjects).length > 0)
+
+      // Merge performance and attendance data with conditional logic
       const mergedData = {
         ...performanceData,
-        students: performanceData.students.map((student: any) => {
-          const studentAttendance = processedAttendanceData[student.studentId]
-          if (!studentAttendance) {
-            console.warn(`No attendance data found for student ID: ${student.studentId}`)
-          }
+        hasAttendanceData: hasValidAttendanceData,
+        hasMarksData: hasValidMarksData,
+        students: studentsList.map((student: any) => {
+          const studentAttendance = processedAttendanceData[student.studentId || student.rollNo]
           return {
-            ...student,
-            attendance: studentAttendance || {
-              totalAttendance: 0,
-              presentAttendance: 0,
-              absentAttendance: 0,
-              absentDates: [],
-            },
+            name: student.name || `Student ${student.rollNo}`,
+            rollNo: student.rollNo || student.studentId,
+            studentId: student.studentId || student.rollNo,
+            subjects: student.subjects || {},
+            attendance: studentAttendance || null,
+            hasAttendance: !!studentAttendance,
+            hasSubjects: !!(student.subjects && Object.keys(student.subjects).length > 0),
           }
         }),
+      }
+
+      // Only show error if no data at all
+      if (mergedData.students.length === 0) {
+        toast({
+          title: "No Data Found",
+          description: "No student data found for the selected criteria.",
+          variant: "destructive",
+        })
+        setReportData(null)
+        return
       }
 
       setReportData(mergedData)
       toast({
         title: "Report Generated",
-        description: "Complete performance report has been generated successfully.",
+        description: `Report generated for ${mergedData.students.length} student(s).`,
       })
     } catch (error) {
       console.error("Error generating report:", error)
@@ -294,14 +349,22 @@ export default function PerformanceReportPage() {
                         name: student.name,
                         rollNo: student.rollNo,
                         currentStandard: Number.parseInt(selectedStandard),
-                        subjects: Object.entries(student.subjects).map(([name, details]: [string, any]) => ({
-                          name,
-                          examDetails: details.examDetails,
-                        })),
-                        attendance: {
-                          totalDays: student.attendance.totalAttendance,
-                          presentDays: student.attendance.presentAttendance,
-                        },
+                        subjects: student.hasSubjects
+                          ? Object.entries(student.subjects).map(([name, details]: [string, any]) => ({
+                              name,
+                              examDetails: details.examDetails || [],
+                            }))
+                          : [],
+                        attendance:
+                          student.hasAttendance && student.attendance
+                            ? {
+                                totalDays: student.attendance.totalAttendance || 0,
+                                presentDays: student.attendance.presentAttendance || 0,
+                              }
+                            : {
+                                totalDays: 0,
+                                presentDays: 0,
+                              },
                       }))}
                     />
                   }
@@ -315,10 +378,13 @@ export default function PerformanceReportPage() {
             <CardContent>
               <Accordion type="single" collapsible className="space-y-2">
                 {reportData.students.map((student: any) => {
-                  const attendancePercentage = getAttendancePercentage(
-                    student.attendance.presentAttendance,
-                    student.attendance.totalAttendance,
-                  )
+                  const attendancePercentage =
+                    student.hasAttendance && student.attendance
+                      ? getAttendancePercentage(
+                          student.attendance.presentAttendance,
+                          student.attendance.totalAttendance,
+                        )
+                      : null
 
                   return (
                     <AccordionItem key={student.rollNo} value={student.rollNo} className="border rounded-lg">
@@ -344,214 +410,289 @@ export default function PerformanceReportPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <div className="text-sm text-slate-500 mb-1">Attendance Rate</div>
-                              <div
-                                className={`text-lg font-bold ${
-                                  attendancePercentage >= 90
-                                    ? "text-emerald-600"
-                                    : attendancePercentage >= 75
-                                      ? "text-blue-600"
-                                      : attendancePercentage >= 60
-                                        ? "text-yellow-600"
-                                        : "text-red-500"
-                                }`}
-                              >
-                                {attendancePercentage}%
+                            {attendancePercentage !== null ? (
+                              <>
+                                <div className="text-right">
+                                  <div className="text-sm text-slate-500 mb-1">Attendance Rate</div>
+                                  <div
+                                    className={`text-lg font-bold ${
+                                      attendancePercentage >= 90
+                                        ? "text-emerald-600"
+                                        : attendancePercentage >= 75
+                                          ? "text-blue-600"
+                                          : attendancePercentage >= 60
+                                            ? "text-yellow-600"
+                                            : "text-red-500"
+                                    }`}
+                                  >
+                                    {attendancePercentage}%
+                                  </div>
+                                </div>
+                                <div
+                                  className={`w-3 h-3 rounded-full ${
+                                    attendancePercentage >= 90
+                                      ? "bg-emerald-500"
+                                      : attendancePercentage >= 75
+                                        ? "bg-blue-500"
+                                        : attendancePercentage >= 60
+                                          ? "bg-yellow-500"
+                                          : "bg-red-500"
+                                  }`}
+                                ></div>
+                              </>
+                            ) : (
+                              <div className="text-right">
+                                <div className="text-sm text-slate-500 mb-1">Performance</div>
+                                <div className="text-lg font-bold text-blue-600">View Details</div>
                               </div>
-                            </div>
-                            <div
-                              className={`w-3 h-3 rounded-full ${
-                                attendancePercentage >= 90
-                                  ? "bg-emerald-500"
-                                  : attendancePercentage >= 75
-                                    ? "bg-blue-500"
-                                    : attendancePercentage >= 60
-                                      ? "bg-yellow-500"
-                                      : "bg-red-500"
-                              }`}
-                            ></div>
+                            )}
                           </div>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="px-6 pb-6">
                         <div className="space-y-6">
-                          {/* Attendance Section */}
+                          {/* Student Basic Info - Always show */}
                           <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
                             <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2 bg-blue-100 rounded-lg">
-                                <Calendar className="w-5 h-5 text-blue-600" />
+                              <div className="p-2 bg-green-100 rounded-lg">
+                                <Users className="w-5 h-5 text-green-600" />
                               </div>
                               <div>
-                                <h4 className="text-lg font-semibold text-slate-800">Attendance Overview</h4>
-                                <p className="text-sm text-slate-500">Monthly attendance tracking</p>
+                                <h4 className="text-lg font-semibold text-slate-800">Student Information</h4>
+                                <p className="text-sm text-slate-500">Basic student details</p>
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-4 mb-5">
+                            <div className="grid grid-cols-2 gap-4">
                               <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
-                                <div className="text-2xl font-bold text-slate-700 mb-1">
-                                  {student.attendance.totalAttendance}
-                                </div>
+                                <div className="text-lg font-bold text-slate-700 mb-1">{student.name}</div>
                                 <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                                  Total Days
+                                  Student Name
                                 </div>
                               </div>
                               <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
-                                <div className="text-2xl font-bold text-emerald-600 mb-1">
-                                  {student.attendance.presentAttendance}
-                                </div>
+                                <div className="text-lg font-bold text-slate-700 mb-1">{student.rollNo}</div>
                                 <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                                  Present
+                                  Roll Number
                                 </div>
-                              </div>
-                              <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
-                                <div className="text-2xl font-bold text-red-500 mb-1">
-                                  {student.attendance.absentAttendance}
-                                </div>
-                                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Absent</div>
-                              </div>
-                              <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
-                                <div className="text-2xl font-bold text-blue-600 mb-1">{attendancePercentage}%</div>
-                                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Rate</div>
                               </div>
                             </div>
-
-                            {student.attendance.absentDates.length > 0 && (
-                              <div className="bg-white rounded-lg p-4 border border-slate-200">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                  <h5 className="font-semibold text-slate-700">Absent Dates & Reasons</h5>
-                                </div>
-                                <div className="space-y-2">
-                                  {student.attendance.absentDates.map((absentDate: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className="flex justify-between items-center py-2 px-3 bg-red-50 rounded-lg border-l-4 border-red-200"
-                                    >
-                                      <span className="font-medium text-slate-700">
-                                        {new Date(absentDate.date).toLocaleDateString("en-US", {
-                                          weekday: "short",
-                                          month: "short",
-                                          day: "numeric",
-                                        })}
-                                      </span>
-                                      <span className="text-sm text-slate-600 bg-white px-2 py-1 rounded">
-                                        {absentDate.reason}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
                           </div>
 
-                          {/* Subjects Section */}
-                          {Object.entries(student.subjects).map(([subject, details]: [string, any]) => (
-                            <div key={subject} className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                          {/* Attendance Section - Only show if student has attendance data */}
+                          {student.hasAttendance && student.attendance && (
+                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                              {/* Keep all existing attendance content */}
                               <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-purple-100 rounded-lg">
-                                  <FileText className="w-5 h-5 text-purple-600" />
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                  <Calendar className="w-5 h-5 text-blue-600" />
                                 </div>
                                 <div>
-                                  <h4 className="text-lg font-semibold text-slate-800">{subject} Performance</h4>
-                                  <p className="text-sm text-slate-500">Test scores and evaluation</p>
+                                  <h4 className="text-lg font-semibold text-slate-800">Attendance Overview</h4>
+                                  <p className="text-sm text-slate-500">Monthly attendance tracking</p>
                                 </div>
                               </div>
 
-                              <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                                <div className="overflow-x-auto">
-                                  <table className="w-full">
-                                    <thead className="bg-slate-100">
-                                      <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                          Test Name
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                          Date
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                          Score
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                          Max Marks
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                          Grade
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-200">
-                                      {details.examDetails.map((exam: any, examIdx: number) => {
-                                        const percentage = Math.round((exam.score / exam.maxMarks) * 100)
-                                        const getGradeInfo = (perc: number) => {
-                                          if (perc >= 90)
-                                            return {
-                                              grade: "A+",
-                                              color: "bg-emerald-100 text-emerald-700 border-emerald-200",
-                                            }
-                                          if (perc >= 80)
-                                            return { grade: "A", color: "bg-blue-100 text-blue-700 border-blue-200" }
-                                          if (perc >= 70)
-                                            return {
-                                              grade: "B+",
-                                              color: "bg-indigo-100 text-indigo-700 border-indigo-200",
-                                            }
-                                          if (perc >= 60)
-                                            return {
-                                              grade: "B",
-                                              color: "bg-yellow-100 text-yellow-700 border-yellow-200",
-                                            }
-                                          if (perc >= 50)
-                                            return {
-                                              grade: "C",
-                                              color: "bg-orange-100 text-orange-700 border-orange-200",
-                                            }
-                                          return { grade: "F", color: "bg-red-100 text-red-700 border-red-200" }
-                                        }
-                                        const gradeInfo = getGradeInfo(percentage)
-
-                                        return (
-                                          <tr key={examIdx} className="hover:bg-slate-50">
-                                            <td className="px-4 py-3">
-                                              <div className="font-medium text-slate-800">{exam.examName}</div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                              <div className="text-sm text-slate-600">
-                                                {new Date(exam.date).toLocaleDateString("en-US", {
-                                                  month: "short",
-                                                  day: "numeric",
-                                                  year: "numeric",
-                                                })}
-                                              </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                              <span className="text-lg font-bold text-slate-800">{exam.score}</span>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                              <span className="text-sm text-slate-500">/ {exam.maxMarks}</span>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                              <div className="flex flex-col items-center gap-1">
-                                                <span
-                                                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${gradeInfo.color}`}
-                                                >
-                                                  {gradeInfo.grade}
-                                                </span>
-                                                <span className="text-xs text-slate-500">{percentage}%</span>
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        )
-                                      })}
-                                    </tbody>
-                                  </table>
+                              <div className="grid grid-cols-4 gap-4 mb-5">
+                                <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                  <div className="text-2xl font-bold text-slate-700 mb-1">
+                                    {student.attendance.totalAttendance}
+                                  </div>
+                                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                    Total Days
+                                  </div>
                                 </div>
+                                <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                  <div className="text-2xl font-bold text-emerald-600 mb-1">
+                                    {student.attendance.presentAttendance}
+                                  </div>
+                                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                    Present
+                                  </div>
+                                </div>
+                                <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                  <div className="text-2xl font-bold text-red-500 mb-1">
+                                    {student.attendance.absentAttendance}
+                                  </div>
+                                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                    Absent
+                                  </div>
+                                </div>
+                                <div className="text-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                  <div className="text-2xl font-bold text-blue-600 mb-1">{attendancePercentage}%</div>
+                                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Rate</div>
+                                </div>
+                              </div>
+
+                              {student.attendance.absentDates.length > 0 && (
+                                <div className="bg-white rounded-lg p-4 border border-slate-200">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                    <h5 className="font-semibold text-slate-700">Absent Dates & Reasons</h5>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {student.attendance.absentDates.map((absentDate: any, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className="flex justify-between items-center py-2 px-3 bg-red-50 rounded-lg border-l-4 border-red-200"
+                                      >
+                                        <span className="font-medium text-slate-700">
+                                          {new Date(absentDate.date).toLocaleDateString("en-US", {
+                                            weekday: "short",
+                                            month: "short",
+                                            day: "numeric",
+                                          })}
+                                        </span>
+                                        <span className="text-sm text-slate-600 bg-white px-2 py-1 rounded">
+                                          {absentDate.reason}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Subjects Section - Only show if student has subjects data */}
+                          {student.hasSubjects && student.subjects && Object.keys(student.subjects).length > 0 && (
+                            <>
+                              {Object.entries(student.subjects).map(([subject, details]: [string, any]) => (
+                                <div key={subject} className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                                  <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2 bg-purple-100 rounded-lg">
+                                      <FileText className="w-5 h-5 text-purple-600" />
+                                    </div>
+                                    <div>
+                                      <h4 className="text-lg font-semibold text-slate-800">{subject} Performance</h4>
+                                      <p className="text-sm text-slate-500">Test scores and evaluation</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full">
+                                        <thead className="bg-slate-100">
+                                          <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                              Test Name
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                              Date
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                              Score
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                              Max Marks
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                              Grade
+                                            </th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200">
+                                          {details.examDetails.map((exam: any, examIdx: number) => {
+                                            const percentage = Math.round((exam.score / exam.maxMarks) * 100)
+                                            const getGradeInfo = (perc: number) => {
+                                              if (perc >= 90)
+                                                return {
+                                                  grade: "A+",
+                                                  color: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                                                }
+                                              if (perc >= 80)
+                                                return {
+                                                  grade: "A",
+                                                  color: "bg-blue-100 text-blue-700 border-blue-200",
+                                                }
+                                              if (perc >= 70)
+                                                return {
+                                                  grade: "B+",
+                                                  color: "bg-indigo-100 text-indigo-700 border-indigo-200",
+                                                }
+                                              if (perc >= 60)
+                                                return {
+                                                  grade: "B",
+                                                  color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+                                                }
+                                              if (perc >= 50)
+                                                return {
+                                                  grade: "C",
+                                                  color: "bg-orange-100 text-orange-700 border-orange-200",
+                                                }
+                                              return { grade: "F", color: "bg-red-100 text-red-700 border-red-200" }
+                                            }
+                                            const gradeInfo = getGradeInfo(percentage)
+
+                                            return (
+                                              <tr key={examIdx} className="hover:bg-slate-50">
+                                                <td className="px-4 py-3">
+                                                  <div className="font-medium text-slate-800">{exam.examName}</div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                  <div className="text-sm text-slate-600">
+                                                    {new Date(exam.date).toLocaleDateString("en-US", {
+                                                      month: "short",
+                                                      day: "numeric",
+                                                      year: "numeric",
+                                                    })}
+                                                  </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                  <span className="text-lg font-bold text-slate-800">{exam.score}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                  <span className="text-sm text-slate-500">/ {exam.maxMarks}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                  <div className="flex flex-col items-center gap-1">
+                                                    <span
+                                                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${gradeInfo.color}`}
+                                                    >
+                                                      {gradeInfo.grade}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500">{percentage}%</span>
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            )
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          )}
+
+                          {/* Show available data summary */}
+                          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <h5 className="font-semibold text-blue-800">Data Availability</h5>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div
+                                className={`flex items-center gap-2 ${student.hasSubjects ? "text-green-700" : "text-gray-500"}`}
+                              >
+                                <div
+                                  className={`w-2 h-2 rounded-full ${student.hasSubjects ? "bg-green-500" : "bg-gray-400"}`}
+                                ></div>
+                                Academic Performance: {student.hasSubjects ? "Available" : "Not Available"}
+                              </div>
+                              <div
+                                className={`flex items-center gap-2 ${student.hasAttendance ? "text-green-700" : "text-gray-500"}`}
+                              >
+                                <div
+                                  className={`w-2 h-2 rounded-full ${student.hasAttendance ? "bg-green-500" : "bg-gray-400"}`}
+                                ></div>
+                                Attendance Data: {student.hasAttendance ? "Available" : "Not Available"}
                               </div>
                             </div>
-                          ))}
+                          </div>
 
-                          {/* Individual PDF Download */}
+                          {/* Individual PDF Download - Always show */}
                           <div className="pt-4 border-t border-slate-200">
                             <PDFLoadingButton
                               document={
@@ -563,18 +704,29 @@ export default function PerformanceReportPage() {
                                     rollNo: student.rollNo,
                                     currentStandard: Number.parseInt(selectedStandard),
                                   }}
-                                  subjects={Object.entries(student.subjects).map(([name, details]: [string, any]) => ({
-                                    name,
-                                    examDetails: details.examDetails,
-                                  }))}
-                                  attendance={{
-                                    totalDays: student.attendance.totalAttendance,
-                                    presentDays: student.attendance.presentAttendance,
-                                  }}
+                                  subjects={
+                                    student.hasSubjects && student.subjects
+                                      ? Object.entries(student.subjects).map(([name, details]: [string, any]) => ({
+                                          name,
+                                          examDetails: details.examDetails || [],
+                                        }))
+                                      : []
+                                  }
+                                  attendance={
+                                    student.hasAttendance && student.attendance
+                                      ? {
+                                          totalDays: student.attendance.totalAttendance || 0,
+                                          presentDays: student.attendance.presentAttendance || 0,
+                                        }
+                                      : {
+                                          totalDays: 0,
+                                          presentDays: 0,
+                                        }
+                                  }
                                 />
                               }
-                              fileName={`${student.name}_Complete_Report.pdf`}
-                              buttonText="Download Individual Report"
+                              fileName={`${student.name}_Report.pdf`}
+                              buttonText="Download Student Report"
                               loadingText="Generating PDF..."
                               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 rounded-lg shadow-sm transition-all duration-200"
                             />
