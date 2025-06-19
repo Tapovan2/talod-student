@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma" // Adjust the import path based on your setup
 export async function POST(request: Request) {
   try {
     const { students } = await request.json()
+    console.log("students",students);
+    
 
     if (!students || !Array.isArray(students)) {
       return NextResponse.json(
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
       
       try {
         // Validate required fields
-        if (!studentData.name || !studentData.rollNo || !studentData.standard || !studentData.class) {
+        if (!studentData.name || !studentData.rollNo || !studentData.currentStandard || !studentData.class) {
           errors.push(`Row ${i + 1}: Missing required fields (name, rollNo, standard, class)`)
           continue
         }
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
         const existingStudent = await prisma.student.findFirst({
           where: {
             rollNo: studentData.rollNo,
-            currentStandard: parseInt(studentData.standard),
+            currentStandard: parseInt(studentData.currentStandard),
             currentClass: studentData.class,
           },
         })
@@ -53,12 +55,12 @@ export async function POST(request: Request) {
           data: {
             name: studentData.name.trim(),
             rollNo: studentData.rollNo.toString().trim(),
-            currentStandard: parseInt(studentData.standard),
+            currentStandard: parseInt(studentData.currentStandard),
             currentClass: studentData.class.trim(),
             academicHistory: {
               create: {
                 year: currentYear,
-                standard: parseInt(studentData.standard),
+                standard: parseInt(studentData.currentStandard),
                 class: studentData.class.trim(),
               },
             },
