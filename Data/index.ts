@@ -1,12 +1,12 @@
 export const standards = {
   "KG1":{
-    classes:["Dhruv"],
+    classes:["A"],
     subjects:[
       "demo1"
     ]
   },
   "KG2":{
-    classes:["Dhruv"],
+    classes:["A"],
     subjects:[
       "demo1"
     ]
