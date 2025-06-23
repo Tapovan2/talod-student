@@ -27,10 +27,15 @@ export async function GET(request: Request) {
       markEntry: true,
     },
   });
+  console.log("length",marks.length);
+  
 
   return NextResponse.json(marks);
 }catch(e:any){
+  console.log("error",e);
   throw new Error(e)
+ 
+  
 }finally{
   await prisma.$disconnect();
 }
@@ -41,10 +46,10 @@ export async function POST(request: Request) {
   const data = await request.json()
 
   try {
-    let updatedNotificationSent = false
-    let createdNotificationSent = false
-    let updatedNotificationData = {}
-    let createdNotificationData = {}
+    // let updatedNotificationSent = false
+    // let createdNotificationSent = false
+    // let updatedNotificationData = {}
+    // let createdNotificationData = {}
 
     const marks = await Promise.all(
       data.map(
@@ -79,14 +84,14 @@ export async function POST(request: Request) {
 
           if (existingMark) {
             // If the mark already exists, update it
-            if (!updatedNotificationSent) {
-              updatedNotificationData = {
-                standard: markEntry.standard,
-                class: markEntry.class,
-                subject: markEntry.subject,
-              }
-              updatedNotificationSent = true
-            }
+            // if (!updatedNotificationSent) {
+            //   updatedNotificationData = {
+            //     standard: markEntry.standard,
+            //     class: markEntry.class,
+            //     subject: markEntry.subject,
+            //   }
+            //   updatedNotificationSent = true
+            // }
             return prisma.mark.update({
               where: {
                 studentId_markEntryId: {
@@ -100,15 +105,15 @@ export async function POST(request: Request) {
               },
             })
           } else {
-            // If the mark doesn't exist, create a new one
-            if (!createdNotificationSent) {
-              createdNotificationData = {
-                standard: markEntry.standard,
-                class: markEntry.class,
-                subject: markEntry.subject,
-              }
-              createdNotificationSent = true
-            }
+            // // If the mark doesn't exist, create a new one
+            // if (!createdNotificationSent) {
+            //   createdNotificationData = {
+            //     standard: markEntry.standard,
+            //     class: markEntry.class,
+            //     subject: markEntry.subject,
+            //   }
+            //   createdNotificationSent = true
+            // }
             return prisma.mark.create({
               data: {
                 student: { connect: { id: student.id } },
@@ -123,13 +128,13 @@ export async function POST(request: Request) {
     )
 
     // Send notifications after processing all marks
-    if (updatedNotificationSent) {
-      await publishEvent(CHANNELS.MARK_UPDATED, JSON.stringify(updatedNotificationData))
-    }
+    // if (updatedNotificationSent) {
+    //   await publishEvent(CHANNELS.MARK_UPDATED, JSON.stringify(updatedNotificationData))
+    // }
 
-    if (createdNotificationSent) {
-      await publishEvent(CHANNELS.MARK_CREATED, JSON.stringify(createdNotificationData))
-    }
+    // if (createdNotificationSent) {
+    //   await publishEvent(CHANNELS.MARK_CREATED, JSON.stringify(createdNotificationData))
+    // }
 
     return NextResponse.json(marks)
   } catch (e: any) {
