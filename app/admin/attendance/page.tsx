@@ -123,7 +123,7 @@ export default function AttendanceViewer() {
    
     
     const response = await fetch(
-      `https://t1-api-attendance.vercel.app/api/attendance?standard=${currentStandard}&class=${currentClass}&month=${Number.parseInt(
+      `https://talod-api.vercel.app/api/attendance?standard=${currentStandard}&class=${currentClass}&month=${Number.parseInt(
         selectedMonth
       )}&year=${Number.parseInt(selectedYear)}${
         showAbsentOnly ? "&status=A" : ""
@@ -140,7 +140,7 @@ export default function AttendanceViewer() {
 
   const fetchHolidays = async () => {
     const response = await fetch(
-      `https://t1-api-attendance.vercel.app/api/holiday?year=${Number.parseInt(
+      `https://talod-api.vercel.app/api/holiday?year=${Number.parseInt(
         selectedYear
       )}`
     );
@@ -323,7 +323,7 @@ export default function AttendanceViewer() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/update-attendance`,
+        `https://talod-api.vercel.app/api/update-attendance`,
         {
           method: "POST",
           headers: {

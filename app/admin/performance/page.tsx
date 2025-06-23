@@ -69,7 +69,7 @@ export default function PerformanceReportPage() {
           }),
         }),
         fetch(
-          `https://t1-api-attendance.vercel.app/api/pattendance?standard=${selectedStandard}&class=${selectedClass}&month=${selectedMonth}&year=${selectedYear}`,
+          `https://talod-api.vercel.app/api/pattendance?standard=${selectedStandard}&class=${selectedClass}&month=${selectedMonth}&year=${selectedYear}`,
         ),
       ])
 

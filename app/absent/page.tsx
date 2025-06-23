@@ -70,7 +70,7 @@ export default function AbsentStudentReason() {
     setError(null);
     try {
       const response = await fetch(
-        `https://t1-api-attendance.vercel.app/api/absent-students?startDate=${startTimestamp}&endDate=${endTimestamp}`
+        `https://talod-api.vercel.app/api/absent-students?startDate=${startTimestamp}&endDate=${endTimestamp}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch absent students data");
@@ -88,7 +88,7 @@ export default function AbsentStudentReason() {
   const handleReasonUpdate = async (studentId: number, reason: string) => {
     try {
       const response = await fetch(
-        `https://t1-api-attendance.vercel.app/api/absent-students`,
+        `https://talod-api.vercel.app/api/absent-students`,
         {
           method: "POST",
           headers: {
