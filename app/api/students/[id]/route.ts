@@ -6,13 +6,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const data = await request.json();
+  console.log("data",data);
+  
   const student = await prisma.student.update({
     where: { id: parseInt(params.id) },
     data: {
       name: data.name,
       rollNo: data.rollNo,
-      currentStandard: parseInt(data.standard),
+      currentStandard: parseInt(data.currentStandard),
       currentClass: data.class,
+      subClass:data.subClass
     },
   });
   return NextResponse.json(student);

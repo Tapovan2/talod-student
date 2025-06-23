@@ -29,6 +29,8 @@ export default function EnhancedAdminPanel() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [selectedStandardForUpload, setSelectedStandardForUpload] = useState("")
   const [selectedClassForUpload, setSelectedClassForUpload] = useState("")
+  const [selectedSubClassForUpload, setSelectedSubClassForUpload] = useState("")
+
   const [isAddingStudent, setIsAddingStudent] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [loadingId, setLoadingId] = useState(null)
@@ -47,14 +49,11 @@ export default function EnhancedAdminPanel() {
   const fetchStudentsForClass = async (standard, className) => {
     const key = `${standard}-${className}`
     setLoadingStandards((prev) => ({ ...prev, [key]: true }))
-    console.log("key",key);
-    
+    console.log("key", key)
 
     try {
       const response = await fetch(`/api/students?standard=${standard}&class=${className}`)
       const data = await response.json()
-     
-      
 
       setAllStudents((prev) => ({
         ...prev,
@@ -133,6 +132,11 @@ export default function EnhancedAdminPanel() {
                 studentData.class = row[2].toString().trim()
               }
 
+              // Add subClass if provided in column D
+              if (row[3]) {
+                studentData.subClass = row[3].toString().trim()
+              }
+
               parsedData.push(studentData)
             }
           }
@@ -192,6 +196,7 @@ export default function EnhancedAdminPanel() {
             name: student.name,
             currentStandard: selectedStandardForUpload, // Changed from 'standard' to 'currentStandard'
             class: student.class,
+            subClass: student.subClass || selectedSubClassForUpload, // Use Excel subClass or dropdown selection
           })
         } else {
           // If no class specified, use the selected class from dropdown
@@ -200,6 +205,7 @@ export default function EnhancedAdminPanel() {
             name: student.name,
             currentStandard: selectedStandardForUpload, // Changed from 'standard' to 'currentStandard'
             class: selectedClassForUpload,
+            subClass: selectedSubClassForUpload,
           })
         }
       })
@@ -324,12 +330,13 @@ export default function EnhancedAdminPanel() {
   const handleAddStudent = async (e) => {
     e.preventDefault()
     const formData = new FormData(e.target)
+
     const data = Object.fromEntries(formData.entries())
+    console.log("data", data)
 
     // Change 'standard' to 'currentStandard'
     const studentData = {
       ...data,
-      currentStandard: data.standard,
     }
     delete studentData.standard
 
@@ -361,13 +368,12 @@ export default function EnhancedAdminPanel() {
     e.preventDefault()
     const formData = new FormData(e.target)
     const data = Object.fromEntries(formData.entries())
+    console.log("data", data)
 
     // Change 'standard' to 'currentStandard'
     const studentData = {
       ...data,
-      currentStandard: data.standard,
     }
-    delete studentData.standard
 
     setLoadingId(editingStudent.id)
 
@@ -424,12 +430,12 @@ export default function EnhancedAdminPanel() {
 
       // Create sample data with class column
       const templateData = [
-        ["Roll No", "Name", "Class"], // Header row
-        ["1", "Student Name 1", "A"],
-        ["2", "Student Name 2", "A"],
-        ["3", "Student Name 3", "B"],
-        ["4", "Student Name 4", "B"],
-        ["5", "Student Name 5", "C"],
+        ["Roll No", "Name", "Class", "SubClass"], // Header row
+        ["1", "Student Name 1", "A", "Maths"],
+        ["2", "Student Name 2", "A", "Biology"],
+        ["3", "Student Name 3", "B", "Maths"],
+        ["4", "Student Name 4", "B", "Biology"],
+        ["5", "Student Name 5", "C", "Maths"],
       ]
 
       // Create workbook and worksheet
@@ -441,6 +447,7 @@ export default function EnhancedAdminPanel() {
         { wch: 10 }, // Roll No column
         { wch: 25 }, // Name column
         { wch: 10 }, // Class column
+        { wch: 15 }, // SubClass column
       ]
 
       // Add worksheet to workbook
@@ -452,7 +459,7 @@ export default function EnhancedAdminPanel() {
       console.error("Error creating template:", error)
       // Fallback to CSV if XLSX fails
       const csvContent =
-        "Roll No,Name,Class\n1,Student Name 1,A\n2,Student Name 2,A\n3,Student Name 3,B\n4,Student Name 4,B\n5,Student Name 5,C\n"
+        "Roll No,Name,Class,SubClass\n1,Student Name 1,A,Maths\n2,Student Name 2,A,Biology\n3,Student Name 3,B,Maths\n4,Student Name 4,B,Biology\n5,Student Name 5,C,Maths\n"
       const blob = new Blob([csvContent], { type: "text/csv" })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -558,6 +565,27 @@ export default function EnhancedAdminPanel() {
                     </Select>
                     <p className="text-sm text-gray-500 mt-1">Only needed if your Excel doesn't have a Class column</p>
                   </div>
+                  {selectedStandardForUpload &&
+                    (selectedStandardForUpload === "11" || selectedStandardForUpload === "12") && (
+                      <div>
+                        <Label>Select SubClass (Optional)</Label>
+                        <Select onValueChange={setSelectedSubClassForUpload}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Default SubClass (Optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["Maths", "Biology"].map((data) => (
+                              <SelectItem key={data} value={data}>
+                                {data}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Only needed if your Excel doesn't have a SubClass column (Column D)
+                        </p>
+                      </div>
+                    )}
 
                   <div>
                     <Label>Upload Excel File</Label>
@@ -690,6 +718,24 @@ export default function EnhancedAdminPanel() {
                           </SelectContent>
                         </Select>
                       </div>
+                      {standard === "11" && (
+                        <div>
+                          <Label htmlFor="subClass">SubClass</Label>
+                          <Select name="subClass" required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select SubClass" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["Maths", "Biology"].map((className) => (
+                                <SelectItem key={className} value={className}>
+                                  Class {className}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
                       <Button type="submit" disabled={isAddingStudent}>
                         {isAddingStudent ? (
                           <>
@@ -815,6 +861,23 @@ export default function EnhancedAdminPanel() {
                                               <Label htmlFor="class">Class</Label>
                                               <Input id="class" name="class" defaultValue={className} readOnly />
                                             </div>
+                                            {standard === "11" && (
+                                              <div>
+                                                <Label htmlFor="subClass">SubClass</Label>
+                                                <Select name="subClass" required>
+                                                  <SelectTrigger>
+                                                    <SelectValue placeholder="Select SubClass" />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    {["Maths", "Biology"].map((className) => (
+                                                      <SelectItem key={className} value={className}>
+                                                        Class {className}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
+                                            )}
                                             <Button type="submit" disabled={loadingId === editingStudent?.id}>
                                               {loadingId === editingStudent?.id ? (
                                                 <>

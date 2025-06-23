@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma" // Adjust the import path based on your setup
 export async function POST(request: Request) {
   try {
     const { students } = await request.json()
-    console.log("students",students);
+   
     
 
     if (!students || !Array.isArray(students)) {
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
             rollNo: studentData.rollNo.toString().trim(),
             currentStandard: parseInt(studentData.currentStandard),
             currentClass: studentData.class.trim(),
+            subClass:studentData.subClass,
             academicHistory: {
               create: {
                 year: currentYear,

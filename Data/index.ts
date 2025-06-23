@@ -140,7 +140,7 @@ export const standards = {
     ],
   },
   "11": {
-    classes: ["Maths", "Biology", "Jee", "Neet", "Eng-Jee", "Eng-Neet"],
+    classes: ["Dhruv", "Nachiketa", "Prahlad", "Jee", "Neet", "Eng-Jee", "Eng-Neet"],
     subjects: [
       "Chemistry ",
       "Physics",

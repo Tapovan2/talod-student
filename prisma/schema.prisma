@@ -110,6 +110,7 @@ model Student {
   rollNo          String            
   currentStandard Int          
   currentClass    String
+  subClass        String? @default("")
   academicHistory AcademicHistory[]
   marks           Mark[]
  
