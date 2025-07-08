@@ -65,7 +65,7 @@ export default function AttendancePage() {
       adjustedDate.setDate(adjustedDate.getDate() + 1);
 
       const response = await fetch(
-        `https://t1-api-attendance.vercel.app/api/attendance`,
+        `https://talod-api.vercel.app/api/attendance`,
         {
           method: "POST",
           headers: {
@@ -79,13 +79,13 @@ export default function AttendancePage() {
           }),
         }
       );
-      
+
       if (!response.ok) {
         throw new Error("Failed to mark attendance");
       }
       const data = await response.json();
-      console.log("data",data);
-      
+      console.log("data", data);
+
       if (data.success) {
         alert("Attendance marked successfully");
         toast({
