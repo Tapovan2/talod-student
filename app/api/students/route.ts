@@ -3,10 +3,10 @@ import prisma from "@/lib/prisma";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  // const standard = searchParams.get("standard");
-  // const classParam = searchParams.get("class");
-  // const subject = searchParams.get("subject");
-  // const subClass = searchParams.get("subClass");
+  const standard = searchParams.get("standard");
+  const classParam = searchParams.get("class");
+  const subject = searchParams.get("subject");
+  const subClass = searchParams.get("subClass");
 
   let students;
 
@@ -102,7 +102,6 @@ export async function POST(request: Request) {
       currentClass: data.class,
 
       subClass: data.subClass,
-      
     },
   });
   return NextResponse.json(student);
