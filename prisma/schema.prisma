@@ -108,22 +108,22 @@ model Student {
   id              Int               @id @default(autoincrement())
   name            String
   rollNo          String            
-  currentStandard Int          
+  currentStandard String          
   currentClass    String
   subClass        String? @default("")
-  academicHistory AcademicHistory[]
+  // academicHistory AcademicHistory[]
   marks           Mark[]
  
 }
 
-model AcademicHistory {
-  id        Int      @id @default(autoincrement())
-  year      Int
-  standard  Int
-  class     String
-  student   Student  @relation(fields: [studentId], references: [id])
-  studentId Int
-}
+// model AcademicHistory {
+//   id        Int      @id @default(autoincrement())
+//   year      Int
+//   standard  String
+//   class     String
+//   student   Student  @relation(fields: [studentId], references: [id])
+//   studentId Int
+// }
 
 model MarkEntry {
   id         Int      @id @default(autoincrement())
