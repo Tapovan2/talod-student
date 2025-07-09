@@ -6,16 +6,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const data = await request.json();
-  console.log("data",data);
-  
+  console.log("data", data);
+
   const student = await prisma.student.update({
     where: { id: parseInt(params.id) },
     data: {
       name: data.name,
       rollNo: data.rollNo,
-      currentStandard: parseInt(data.currentStandard),
+      currentStandard: data.currentStandard,
       currentClass: data.class,
-      subClass:data.subClass
+      subClass: data.subClass,
     },
   });
   return NextResponse.json(student);
@@ -25,9 +25,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  await prisma.academicHistory.deleteMany({
-    where: { studentId: parseInt(params.id) },
-  });
+  // await prisma.academicHistory.deleteMany({
+  //   where: { studentId: parseInt(params.id) },
+  // });
 
   await prisma.mark.deleteMany({
     where: {
