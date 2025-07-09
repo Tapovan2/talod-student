@@ -3,7 +3,22 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import Logout from "./logout";
 import { Button } from "@/components/ui/button";
 
-const standards = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const standards = [
+  "KG1",
+  "KG2",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "11",
+  "12",
+];
 
 export default async function Home() {
   return (
