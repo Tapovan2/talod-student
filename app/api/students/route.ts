@@ -3,10 +3,10 @@ import prisma from "@/lib/prisma";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const standard = searchParams.get("standard");
-  const classParam = searchParams.get("class");
-  const subject = searchParams.get("subject");
-  const subClass = searchParams.get("subClass");
+  // const standard = searchParams.get("standard");
+  // const classParam = searchParams.get("class");
+  // const subject = searchParams.get("subject");
+  // const subClass = searchParams.get("subClass");
 
   let students;
 
@@ -92,7 +92,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const data = await request.json();
-  console.log("data", data);
+  // console.log("data", data);
 
   const student = await prisma.student.create({
     data: {
