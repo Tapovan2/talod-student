@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const where: Record<string, any> = {};
 
     if (standard) {
-      where.standard = parseInt(standard);
+      where.standard = (standard);
     }
 
     if (className) {

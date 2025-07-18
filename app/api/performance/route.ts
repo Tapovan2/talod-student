@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { redis } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +28,7 @@ interface Subjects {
 
 export async function POST(request: Request) {
   const { standard, classParam, month, year } = await request.json();
-  console.log(standard,classParam,month,year);
-  
+  console.log(standard, classParam, month, year);
 
   if (!standard || !classParam) {
     return NextResponse.json(
@@ -57,7 +55,7 @@ export async function POST(request: Request) {
   // }
 
   try {
-    const standardInt = Number.parseInt(standard);
+    const standardInt = standard;
 
     const studentsWithMarks = await prisma.student.findMany({
       where: {
@@ -96,10 +94,6 @@ export async function POST(request: Request) {
 
       orderBy: { rollNo: "asc" },
     });
-
-  
-   
-   
 
     if (!studentsWithMarks.length) {
       return NextResponse.json({ message: "No Data Found" }, { status: 404 });
