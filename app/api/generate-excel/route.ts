@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(request: Request) {
-  const { markEntryIds, standard, class: className } = await request.json()
+  const { markEntryIds, standard, class: className } = await request.json();
 
   const students = await prisma.student.findMany({
     where: {
-      currentStandard: parseInt(standard),
+      currentStandard: standard,
       currentClass: className,
     },
     orderBy: {
-      rollNo: 'asc',
+      rollNo: "asc",
     },
-  })
+  });
 
   const markEntries = await prisma.markEntry.findMany({
     where: {
@@ -22,36 +22,37 @@ export async function POST(request: Request) {
       marks: true,
     },
     orderBy: {
-      date: 'asc',
+      date: "asc",
     },
-  })
+  });
 
   // Custom sorting function for roll numbers
   const sortRollNumbers = (a: string, b: string) => {
-    const aNum = parseInt(a.replace(/\D/g, ''))
-    const bNum = parseInt(b.replace(/\D/g, ''))
-    return aNum - bNum
-  }
+    const aNum = parseInt(a.replace(/\D/g, ""));
+    const bNum = parseInt(b.replace(/\D/g, ""));
+    return aNum - bNum;
+  };
 
   // Sort students by roll number
-  students.sort((a, b) => sortRollNumbers(a.rollNo, b.rollNo))
+  students.sort((a, b) => sortRollNumbers(a.rollNo, b.rollNo));
 
   const excelData = students.map((student, index) => {
     const rowData: any = {
-      'Sr No': index + 1,
-      'Roll No': student.rollNo,
-      'Name': student.name,
-    }
+      "Sr No": index + 1,
+      "Roll No": student.rollNo,
+      Name: student.name,
+    };
 
-    markEntries.forEach(entry => {
-      const mark = entry.marks.find(m => m.studentId === student.id)
-      const columnName = `${entry.name} (${entry.date.toLocaleDateString()}) - ${entry.subject}`
-      rowData[columnName] = mark ? mark.score : 'AB'
-    })
+    markEntries.forEach((entry) => {
+      const mark = entry.marks.find((m) => m.studentId === student.id);
+      const columnName = `${
+        entry.name
+      } (${entry.date.toLocaleDateString()}) - ${entry.subject}`;
+      rowData[columnName] = mark ? mark.score : "AB";
+    });
 
-    return rowData
-  })
+    return rowData;
+  });
 
-  return NextResponse.json(excelData)
+  return NextResponse.json(excelData);
 }
-
