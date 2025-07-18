@@ -48,6 +48,7 @@ export async function GET(
 ) {
   try {
     const id = params.id;
+    console.log("id", id);
 
     // Check if the id is 'batch' to handle multiple students
     if (id === "batch") {

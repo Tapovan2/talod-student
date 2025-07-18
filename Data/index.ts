@@ -1,15 +1,11 @@
 export const standards = {
-  "KG1":{
-    classes:["A"],
-    subjects:[
-      "demo1"
-    ]
+  KG1: {
+    classes: ["A"],
+    subjects: ["demo1"],
   },
-  "KG2":{
-    classes:["A"],
-    subjects:[
-      "demo1"
-    ]
+  KG2: {
+    classes: ["A"],
+    subjects: ["demo1"],
   },
   "1": {
     classes: ["A"],
@@ -21,6 +17,7 @@ export const standards = {
       "General Knowledge",
 
       "Computer",
+      "Test",
     ],
   },
   "2": {
@@ -32,6 +29,7 @@ export const standards = {
       "Hindi",
       "General Knowledge",
       "Computer",
+      "Test",
     ],
   },
   "3": {
@@ -44,6 +42,7 @@ export const standards = {
       "General Knowledge",
       "Computer",
       "Enviornment",
+      "Test",
     ],
   },
   "4": {
@@ -56,6 +55,7 @@ export const standards = {
       "General Knowledge",
       "Computer",
       "Enviornment",
+      "Test",
     ],
   },
   "5": {
@@ -68,6 +68,7 @@ export const standards = {
       "General Knowledge",
       "Computer",
       "Enviornment",
+      "Test",
     ],
   },
   "6": {
@@ -83,6 +84,7 @@ export const standards = {
       " G.k",
       "Geeta",
       "Computer",
+      "Test",
     ],
   },
   "7": {
@@ -98,6 +100,7 @@ export const standards = {
       " G.k",
       "Geeta",
       "Computer",
+      "Test",
     ],
   },
   "8": {
@@ -113,6 +116,7 @@ export const standards = {
       " G.k",
       "Geeta",
       "Computer",
+      "Test",
     ],
   },
   "9": {
@@ -125,6 +129,7 @@ export const standards = {
       "Gujarati",
       "Social Science",
       "English",
+      "Test",
     ],
   },
   "10": {
@@ -136,6 +141,7 @@ export const standards = {
       "Gujarati",
       "Social Science",
       "English",
+      "Test",
     ],
   },
   "11": {
@@ -148,6 +154,7 @@ export const standards = {
       "English ",
       "Computer",
       "Sanskrit",
+      "Test",
     ],
   },
   "12": {
@@ -160,6 +167,7 @@ export const standards = {
       "English ",
       "Computer",
       "Sanskrit",
+      "Test",
     ],
   },
 } as const;
